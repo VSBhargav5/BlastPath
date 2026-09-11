@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "blastpath"
-version = "0.1.0"
+version = "0.2.0"
 description = "What breaks if this change lands? Diff blast-radius as a path with provenance"
 readme = "README.md"
 requires-python = ">=3.11"
