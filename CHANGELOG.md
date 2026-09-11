@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.2.0 — 2026-09-11
+
+- `--git` radius from `git diff` vs HEAD (or `--against`)
+- Graph snapshot + compare (nodes/edges added and removed)
+- CODEOWNERS on must-read files
+- Risk bands: low / medium / high / critical
+- PR workflow that emits `radius.md`
+
 ## 0.1.0 — 2026-09-11
 
 - Python AST graph (modules, classes, functions, imports, calls)
