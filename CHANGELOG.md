@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.2.1 — 2026-09-11
+
+- `.blastpathignore` + `blastpath.toml`
+- `stats` and `explain` commands
+- Mermaid radius export
+- Graph summary on `build`
+
 ## 0.2.0 — 2026-09-11
 
 - `--git` radius from `git diff` vs HEAD (or `--against`)
