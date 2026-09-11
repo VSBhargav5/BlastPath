@@ -5,6 +5,7 @@ from __future__ import annotations
 import ast
 from pathlib import Path
 
+from .ignore import is_ignored, load_patterns
 from .models import Edge, Node, NodeKind, Provenance
 
 SKIP_DIRS = {".git", ".venv", "venv", "__pycache__", "node_modules", ".tox", "dist", "build"}
@@ -12,7 +13,18 @@ SKIP_DIRS = {".git", ".venv", "venv", "__pycache__", "node_modules", ".tox", "di
 
 def iter_py_files(root: Path) -> list[Path]:
     root = root.resolve()
-    files = [p for p in root.rglob("*.py") if not any(part in SKIP_DIRS for part in p.parts)]
+    patterns = load_patterns(root)
+    files = []
+    for p in root.rglob("*.py"):
+        if any(part in SKIP_DIRS for part in p.parts):
+            continue
+        try:
+            rel = str(p.resolve().relative_to(root))
+        except ValueError:
+            continue
+        if is_ignored(rel, patterns):
+            continue
+        files.append(p)
     return sorted(files)
 
 
@@ -42,7 +54,7 @@ def parse_file(root: Path, file: Path) -> tuple[list[Node], list[Edge]]:
             cid = f"{mid}.{node.name}"
             nodes.append(Node(id=cid, kind=NodeKind.CLASS, name=node.name, file=rel, line=node.lineno, qualname=cid))
             defined[node.name] = cid
-            edges.append(Edge(src=mid, dst=cid, kind="defines", file=rel, line=node.lineno))
+            edges.append(Edge(src=cid, dst=cid, kind="defines", file=rel, line=node.lineno))
             for item in node.body:
                 if isinstance(item, ast.FunctionDef | ast.AsyncFunctionDef):
                     nid = f"{cid}.{item.name}"
