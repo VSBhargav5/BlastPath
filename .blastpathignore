@@ -1,0 +1,3 @@
+# extra skip globs for BlastPath scans
+tests/
+examples/sample.diff

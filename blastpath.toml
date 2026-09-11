@@ -1,0 +1,4 @@
+[blastpath]
+hops = 3
+min_god_degree = 4
+format = "md"
