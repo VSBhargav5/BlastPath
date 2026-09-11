@@ -2,14 +2,16 @@
 
 from __future__ import annotations
 
+from .bands import risk_band
 from .models import BlastReport
 
 
-def format_markdown(report: BlastReport) -> str:
+def format_markdown(report: BlastReport, owners: dict[str, list[str]] | None = None) -> str:
+    band = risk_band(report.risk)
     lines = [
         "# BlastPath · change radius",
         "",
-        f"Risk **{report.risk}/100** · hops **{report.hops}** · "
+        f"Risk **{report.risk}/100** ({band}) · hops **{report.hops}** · "
         f"changed files **{len(report.changed_files)}** · "
         f"radius **{len(report.radius_nodes)}** · "
         f"god-node hits **{len(report.god_hits)}**",
@@ -22,7 +24,11 @@ def format_markdown(report: BlastReport) -> str:
         lines.append("- None")
     lines += ["", "## Must-read (in radius)"]
     if report.must_read:
-        lines.extend(f"- `{f}`" for f in report.must_read)
+        for f in report.must_read:
+            who = ""
+            if owners and owners.get(f):
+                who = " — " + ", ".join(owners[f])
+            lines.append(f"- `{f}`{who}")
     else:
         lines.append("- None")
     lines += ["", "## Changed symbols"]
