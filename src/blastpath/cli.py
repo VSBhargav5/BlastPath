@@ -11,16 +11,19 @@ from rich.table import Table
 
 from .bands import risk_band
 from .diffscan import files_from_diff, files_from_paths
+from .explain import explain_node
 from .gitwork import GitError, changed_files
 from .god import god_nodes
 from .graph import CodeGraph
 from .html import format_html
+from .mermaid import format_mermaid
 from .owners import load_codeowners, owners_for_files
 from .parse import parse_repo
 from .paths import shortest_path
 from .radius import analyze
 from .report import format_markdown
 from .snapshot import compare_graphs, load_snapshot, save_snapshot
+from .stats import graph_stats
 
 app = typer.Typer(help="BlastPath – what breaks if this change lands", no_args_is_help=True)
 console = Console()
@@ -39,6 +42,8 @@ def _emit_report(report, root: Path, fmt: str, output: Optional[Path]) -> None:
         content = format_markdown(report, owners=owners or None)
     elif fmt == "html":
         content = format_html(report)
+    elif fmt == "mermaid":
+        content = format_mermaid(report)
     elif fmt == "json":
         payload = report.model_dump()
         payload["band"] = risk_band(report.risk)
@@ -47,7 +52,7 @@ def _emit_report(report, root: Path, fmt: str, output: Optional[Path]) -> None:
     elif fmt == "rich":
         content = None
     else:
-        console.print("[red]format must be rich, md, html, or json[/red]")
+        console.print("[red]format must be rich, md, html, json, or mermaid[/red]")
         raise typer.Exit(1)
     if content is not None:
         if output:
@@ -75,11 +80,22 @@ def _emit_report(report, root: Path, fmt: str, output: Optional[Path]) -> None:
 @app.command("build")
 def build_cmd(root: Path = typer.Argument(Path(".")), json_out: Optional[Path] = typer.Option(None, "--json")):
     g = _graph(root)
-    console.print(f"[green]Nodes[/green] {len(g.nodes)}  [green]Edges[/green] {sum(len(v) for v in g.out.values())}")
+    s = graph_stats(g)
+    console.print(f"[green]Nodes[/green] {s['nodes']}  [green]Edges[/green] {s['edges']}  avg degree {s['avg_degree']}")
     if json_out:
-        payload = {"nodes": [n.model_dump() for n in g.nodes.values()], "edges": [e.model_dump() for edges in g.out.values() for e in edges]}
+        payload = {"stats": s, "nodes": [n.model_dump() for n in g.nodes.values()], "edges": [e.model_dump() for edges in g.out.values() for e in edges]}
         json_out.write_text(json.dumps(payload, indent=2) + "\n")
         console.print(f"[green]Wrote[/green] {json_out}")
+
+
+@app.command("stats")
+def stats_cmd(root: Path = typer.Argument(Path("."))):
+    console.print(json.dumps(graph_stats(_graph(root)), indent=2))
+
+
+@app.command("explain")
+def explain_cmd(symbol: str, root: Path = typer.Option(Path("."), "--root")):
+    console.print(json.dumps(explain_node(_graph(root), symbol), indent=2))
 
 
 @app.command("gods")
